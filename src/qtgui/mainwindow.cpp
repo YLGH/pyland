@@ -248,8 +248,8 @@ MainWindow::MainWindow()
 
 
     //GameWindow embedWindow(800,600,false);
-    SDL_SetWindowSize(embedWindow, 600, 420);
-    glViewport(0, 0, 600,420);
+    SDL_SetWindowSize(embedWindow, 1024, 768);
+    glViewport(0, 0, 1024,768);
     embedWindow->flags |= SDL_WINDOW_OPENGL;
     SDL_GL_LoadLibrary(NULL);
     glContext = SDL_GL_CreateContext(embedWindow);
