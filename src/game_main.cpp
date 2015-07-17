@@ -54,22 +54,30 @@ using namespace std;
 static std::mt19937 random_generator;
 
 
-GameMain::GameMain(int argc, char *argv[]) {
+GameMain::GameMain(int argc, char *argv[]):
+    interpreter(boost::filesystem::absolute("python_embed/wrapper_functions.so").normalize()),
+    gui_manager(),
+    embedWindow(800, 600, false, argc, argv, this),
+    map_viewer(&embedWindow, &gui_manager),
+    tile_identifier_text(&embedWindow, Engine::get_game_font(), false),
+    cursor(&embedWindow)
+{
 
-    std::string map_path("../maps/start_screen.tmx");
+    map_path = "../maps/start_screen.tmx";
 
-    switch (argc) {
-        default:
-            std::cout << "Usage: " << argv[0] << " [EDITOR] [MAP]" << std::endl;
-            return;
+    switch (argc)
+    {
+    default:
+        std::cout << "Usage: " << argv[0] << " [EDITOR] [MAP]" << std::endl;
+        return;
 
         // The lack of break statements is not an error!!!
-        case 3:
-            map_path = std::string(argv[2]);
-        case 2:
-            Engine::set_editor(argv[1]);
-        case 1:
-            break;
+    case 3:
+        map_path = std::string(argv[2]);
+    case 2:
+        Engine::set_editor(argv[1]);
+    case 1:
+        break;
     }
 
     google::InitGoogleLogging(argv[0]);
@@ -78,21 +86,13 @@ GameMain::GameMain(int argc, char *argv[]) {
     /// CREATE GLOBAL OBJECTS
 
     //Create the game embedWindow to present to the users
-    GameWindow embedWindow(800, 600, false, argc, argv, this);
     embedWindow.use_context();
     Engine::set_game_window(&embedWindow);
 
-
-    //Create the interpreter
-    Interpreter interpreter(boost::filesystem::absolute("python_embed/wrapper_functions.so").normalize());
     //Create the input manager
-    InputManager* input_manager = embedWindow.get_input_manager();
-
-    //Create the GUI manager
-    GUIManager gui_manager;
+    input_manager = embedWindow.get_input_manager();
 
     //Create the map viewer
-    MapViewer map_viewer(&embedWindow, &gui_manager);
     Engine::set_map_viewer(&map_viewer);
 
     //    void (GUIManager::*mouse_callback_function) (MouseInputEvent) = &GUIManager::mouse_callback_function;
@@ -145,7 +145,7 @@ GameMain::GameMain(int argc, char *argv[]) {
     gui_manager.set_root(sprite_window);
 
     // build navigation bar buttons
-    NotificationBar notification_bar;
+
     Engine::set_notification_bar(&notification_bar);
     //    SpriteSwitcher sprite_switcher;
 
@@ -244,10 +244,10 @@ GameMain::GameMain(int argc, char *argv[]) {
         //     start + (c⁵ - 5·c⁴ + 5·c³) change
         //
         float eased(1.0f + 511.0f * (
-                        + 1.0f * completion * completion * completion * completion * completion
-                        - 5.0f * completion * completion * completion * completion
-                        + 5.0f * completion * completion * completion
-                    ));
+            + 1.0f * completion * completion * completion * completion * completion
+            - 5.0f * completion * completion * completion * completion
+            + 5.0f * completion * completion * completion
+        ));
 
         EventManager::get_instance().time.set_game_seconds_per_real_second(eased);
     }
@@ -392,7 +392,6 @@ GameMain::GameMain(int argc, char *argv[]) {
     }
     ));
 
-    Text tile_identifier_text(&embedWindow, Engine::get_game_font(), false);
     tile_identifier_text.move_ratio(1.0f, 0.0f);
     tile_identifier_text.resize(256, 64);
     tile_identifier_text.align_right();
@@ -402,7 +401,6 @@ GameMain::GameMain(int argc, char *argv[]) {
     tile_identifier_text.set_bloom_colour(0x00, 0x0, 0x00, 0xa0);
     tile_identifier_text.set_colour(0xff, 0xff, 0xff, 0xa8);
     tile_identifier_text.set_text("(?, ?)");
-    glm::ivec2 tile_identifier_old_tile;
 
     std::function<void (GameWindow *)> func_char = [&] (GameWindow *)
     {
@@ -416,7 +414,7 @@ GameMain::GameMain(int argc, char *argv[]) {
     bool run_game = true;
 
     //Setup challenge
-    ChallengeData *challenge_data(new ChallengeData(
+    challenge_data = (new ChallengeData(
       map_path,
       &interpreter,
       &gui_manager,
@@ -426,85 +424,39 @@ GameMain::GameMain(int argc, char *argv[]) {
       0)
     );
 
-    MouseCursor cursor(&embedWindow);
     //Run the challenge - returns after challenge completes
 
-    while(!embedWindow.check_close() && run_game)
-    {
-        challenge_data->run_challenge = true;
-        Challenge* challenge = pick_challenge(challenge_data);
-        Engine::set_challenge(challenge);
-        challenge->start();
 
-        auto last_clock(std::chrono::steady_clock::now());
+    //CALL THIS EACH TIME A CHALLENGE STARTS
+    //while(!embedWindow.check_close() && run_game)
+    //{
+    challenge_data->run_challenge = true;
+    Challenge* challenge = pick_challenge(challenge_data);
+    Engine::set_challenge(challenge);
+    challenge->start();
 
-        //Run the challenge - returns after challenge completes
-        VLOG(3) << "{";
-        while (!challenge_data->game_window->check_close() && challenge_data->run_challenge)
-        {
-            last_clock = std::chrono::steady_clock::now();
+    last_clock = std::chrono::steady_clock::now();
 
-            VLOG(3) << "} SB | IM {";
-            GameWindow::update();
+    //Run the challenge - returns after challenge completes
+   // VLOG(3) << "{";
 
-            VLOG(3) << "} IM | EM {";
 
-            do
-            {
-                EventManager::get_instance().process_events();
-            }
-            while (
-                std::chrono::steady_clock::now() - last_clock
-                < std::chrono::nanoseconds(1000000000 / 60)
-            );
+    //VLOG(3) << "}";
+    //CALL THIS EACH TIME A CHALLENGE ENDS
+    // Clean up after the challenge - additional, non-challenge clean-up
+//////////		em.flush_and_disable();
+//////////		delete challenge;
+//////////		em.reenable();
 
-            VLOG(3) << "} EM | RM {";
-            Engine::get_map_viewer()->render();
-            VLOG(3) << "} RM | TD {";
-            Engine::text_displayer();
-            challenge_data->notification_bar->text_displayer();
-
-            // This is not an input event, because the map can move with
-            // the mouse staying still.
-            {
-                std::pair<int,int> pixels = input_manager->get_mouse_pixels();
-                glm::ivec2 tile(Engine::get_map_viewer()->pixel_to_tile( {pixels.first, pixels.second}));
-                if (tile != tile_identifier_old_tile)
-                {
-                    tile_identifier_old_tile = tile;
-                    std::stringstream position;
-                    position << "(" << tile.x << ", " << tile.y << ")";
-
-                    tile_identifier_text.set_text(position.str());
-                }
-            }
-            tile_identifier_text.display();
-
-            cursor.display();
-
-            VLOG(3) << "} TD | SB {";
-            challenge_data->game_window->swap_buffers();
-            return;
-            embedWindow.executeApp();
-        }
-
-        VLOG(3) << "}";
-
-        // Clean up after the challenge - additional, non-challenge clean-up
-        em.flush_and_disable();
-        delete challenge;
-        em.reenable();
-
-    }
+    //}
 
     //game_init(argc, argv);
 
-    //embedWindow.executeApp();
+    embedWindow.executeApp();
 }
 
 void GameMain::game_loop()
 {
-    cout << "Reached here bro" << endl;
 
 }
 
