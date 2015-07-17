@@ -490,7 +490,6 @@ int main(int argc, char *argv[]) {
         em.flush_and_disable();
         delete challenge;
         em.reenable();
-
     }
 
     //game_init(argc, argv);

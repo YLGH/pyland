@@ -59,6 +59,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QLineEdit>
+//#include <QGLWidget>
 
 // QScintilla stuff
 #include <Qsci/qsciapis.h>
@@ -202,6 +203,12 @@ MainWindow::MainWindow()
 
     gameWidget->setAttribute(Qt::WA_NativeWindow);
 
+    //QGLWidget* glWidget = new QGLWidget();
+
+
+
+
+
     windowLayout->addWidget(gameWidget);
     windowLayout->addWidget(splitter);
     windowLayout->setStretchFactor(gameWidget,3);
@@ -248,8 +255,8 @@ MainWindow::MainWindow()
 
 
     //GameWindow embedWindow(800,600,false);
-    SDL_SetWindowSize(embedWindow, 1024, 768);
-    glViewport(0, 0, 1024,768);
+    SDL_SetWindowSize(embedWindow, 400, 400);
+    glViewport(0, 0, 400,400);
     embedWindow->flags |= SDL_WINDOW_OPENGL;
     SDL_GL_LoadLibrary(NULL);
     glContext = SDL_GL_CreateContext(embedWindow);
@@ -324,6 +331,7 @@ void MainWindow::timerHandler()
             break;
         }
     }
+    std::cout << "time handler\n";
     glClear(GL_COLOR_BUFFER_BIT);
     SDL_GL_SwapWindow(embedWindow);
 }
