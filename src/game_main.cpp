@@ -484,6 +484,7 @@ GameMain::GameMain(int argc, char *argv[]) {
 
             VLOG(3) << "} TD | SB {";
             challenge_data->game_window->swap_buffers();
+            return;
             embedWindow.executeApp();
         }
 
@@ -503,8 +504,8 @@ GameMain::GameMain(int argc, char *argv[]) {
 
 void GameMain::game_loop()
 {
-
     cout << "Reached here bro" << endl;
+
 }
 
 Challenge* GameMain::pick_challenge(ChallengeData* challenge_data)
