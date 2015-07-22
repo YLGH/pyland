@@ -80,12 +80,12 @@ class Entity {
         /// @return
         ///     Whether move was successful.
         ///
-        void move(int x, int y);
+        void move(int x, int y, PyObject *callback);
 
-        void move_east();
-        void move_south();
-        void move_north();
-        void move_west();
+        void move_east(PyObject *callback);
+        void move_south(PyObject *callback);
+        void move_north(PyObject *callback);
+        void move_west(PyObject *callback);
         
         ///
         /// @return
@@ -114,6 +114,8 @@ class Entity {
         ///
         /// Prints to standard output the name and position of entity.
         ///
+        /// TODO: rename this method, it's a silly name!
+        ///
         void monologue();
 
         ///
@@ -129,6 +131,11 @@ class Entity {
         ///     Whether cut was successful.
         ///
         bool cut(int x, int y);
+
+        ///
+        /// Centre the camera on this object. Snaps instantly
+        ///
+        void focus();
 
         ///
         /// Look for any objects in a range. Returns an array of

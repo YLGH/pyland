@@ -15,13 +15,11 @@
 #include "engine.hpp"
 #include "event_manager.hpp"
 #include "game_time.hpp"
-#include "gil_safe_future.hpp"
 #include "map.hpp"
 #include "map_object.hpp"
 #include "map_viewer.hpp"
 #include "notification_bar.hpp"
 #include "object_manager.hpp"
-#include "gil_safe_future.hpp"
 #include "text.hpp"
 
 
@@ -37,7 +35,7 @@ float Engine::global_scale(1.0f);
 
 void Engine::move_object(int id, glm::ivec2 move_by) {
     // TODO: Make sure std::promise garbage collects correctly
-    Engine::move_object(id, move_by, GilSafeFuture<bool>());
+    Engine::move_object(id, move_by, [] () {});
 }
 
 // Undefined for diagonals, but will return within correct half
@@ -82,8 +80,7 @@ std::string to_direction(glm::ivec2 direction) {
 }
 
 //TODO: This needs to work with renderable objects
-void Engine::move_object(int id, glm::ivec2 move_by, GilSafeFuture<bool> walk_succeeded_return) {
-
+void Engine::move_object(int id, glm::ivec2 move_by, std::function<void ()> func) {
     auto object(ObjectManager::get_instance().get_object<MapObject>(id));
 
     if (!object || object->is_moving()) { return; }
@@ -113,7 +110,7 @@ void Engine::move_object(int id, glm::ivec2 move_by, GilSafeFuture<bool> walk_su
     // Motion
     EventManager::get_instance().add_timed_event(
         GameTime::duration(0.3),
-        [direction, move_by, walk_succeeded_return, location, target, id] (float completion) mutable {
+        [direction, move_by, location, target, id, func] (float completion) mutable {
             auto object = ObjectManager::get_instance().get_object<MapObject>(id);
             if (!object) { return false; }
 
@@ -140,9 +137,7 @@ void Engine::move_object(int id, glm::ivec2 move_by, GilSafeFuture<bool> walk_su
                 // Step-on events
                 get_map_viewer()->get_map()->event_step_on.trigger(target, id);
 
-                // False when moving in place
-                // TODO: More properz
-                walk_succeeded_return.set(target == location + glm::vec2(move_by));
+                EventManager::get_instance().add_event(func);
             }
 
             // Run to completion
@@ -246,118 +241,6 @@ void Engine::print_dialogue(std::string name, std::string text) {
     std::string text_to_display = name + " : " + text;
     notification_bar->add_notification(text_to_display);
 }
-
-/** TODO BLEH LEGACY CODE, TO BE REMOVED AND IMPLEMENTED IN PYTHON
-void Engine::text_displayer() {
-    Map *map = CHECK_NOTNULL(map_viewer->get_map());
-
-    auto objects = map->get_objects();
-    for (int object_id : objects) {
-        //MapObject is on the map so now get its locationg
-        auto object = ObjectManager::get_instance().get_object<MapObject>(object_id);
-        if (object->get_object_text()) {
-            object->get_object_text()->display();
-        }
-    }
-}
-
- TODO BLEH LEGACY CODE, TO BE REMOVED AND IMPLEMENTED IN PYTHON
-std::vector<std::tuple<std::string, int, int>> Engine::look(int id, int search_range) {
-    std::vector<std::tuple<std::string, int, int>> objects;
-
-    Map *map = CHECK_NOTNULL(CHECK_NOTNULL(map_viewer)->get_map());
-    //Check the object is on the map
-    auto map_objects = map->get_objects();
-    for(auto object_id : map_objects) {
-        if(object_id != 0) {
-            //MapObject is on the map so now get its location
-            auto object = ObjectManager::get_instance().get_object<MapObject>(object_id);
-            if(!object)
-                continue;
-
-            if(!object->is_findable())
-                continue;
-            std::string name = object->get_name();
-            //TODO, maybe we should give python the floats - what if the object is moving?
-            //in this case, the position is truncated
-            glm::ivec2 object_pos = object->get_position();
-
-            //Check if in range
-            std::shared_ptr<MapObject> MapObject = ObjectManager::get_instance().get_object<MapObject>(id);
-            std::cout << object->get_name() << std::endl;
-            //Circle bounds
-            if(glm::length(MapObject->get_position() - object->get_position()) > (double)search_range)
-                continue;
-
-
-            objects.push_back(std::make_tuple(name, object_pos.x, object_pos.y));
-        }
-    }
-    return objects;
-}
-
-bool Engine::cut(int id, glm::ivec2 location) {
-    std::cout << id << std::endl;
-    std::cout << location.x <<std::endl;
-
-    Map *map = CHECK_NOTNULL(CHECK_NOTNULL(map_viewer)->get_map());
-    std::shared_ptr<MapObject> MapObject = ObjectManager::get_instance().get_object<MapObject>(id);
-    glm::ivec2 MapObject_pos = MapObject->get_position();
-    location = MapObject_pos + location;
-
-    //Check bounds
-    if(location.x < 0 || location.x >= map->get_width() ||
-       location.y < 0 || location.y >= map->get_height()) {
-        return false;
-    }
-    auto map_objects = map->get_map_objects();
-    for(auto object_id : map_objects) {
-        if(object_id != 0) {
-            //MapObject is on the map so now get its location
-            auto object = ObjectManager::get_instance().get_object<MapObject>(object_id);
-            glm::ivec2 object_pos = object->get_position();
-            if(object_pos == location) {
-                // Remove the object
-                map->remove_map_object(object_id);
-                ObjectManager::get_instance().remove_object(object_id);
-                return true;
-            }
-        }
-    }
-
-
-    return false;
-}
-
-
-void Engine::text_updater() {
-    Map *map = CHECK_NOTNULL(map_viewer->get_map());
-
-    auto objects = map->get_objects();
-    for (int object_id : objects) {
-        //MapObject is on the map so now get its location
-        auto object = ObjectManager::get_instance().get_object<MapObject>(object_id);
-
-        glm::ivec2 pixel_position(Engine::get_map_viewer()->tile_to_pixel(object->get_position()));
-
-        object->get_object_text()->move(
-            pixel_position.x + int(Engine::get_actual_tile_size() / 2.0f),
-            pixel_position.y
-        );
-    }
-
-}
-
-void Engine::update_status(int id, std::string status) {
-    auto object = ObjectManager::get_instance().get_object<MapObject>(id);
-    if (!object) {
-        LOG(INFO) << "not a MapObject";
-    } else {
-        object->set_object_status(status);
-    }
-}
-
-*/
 
 TextFont Engine::get_game_font() {
     return TextFont(get_game_typeface(), 19);

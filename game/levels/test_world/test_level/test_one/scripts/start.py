@@ -16,21 +16,14 @@
 
 #boulder_one.move_north()
 
-boulder_one.move_south()
-boulder_one.move_south()
-boulder_one.move_south()
-boulder_one.move_south()
-boulder_one.move_south()
-boulder_one.move_south()
-boulder_one.move_south()
-boulder_one.move_south()
-player_one.move_south()
-portal_one.move_west()
-portal_one.move_west()
-portal_one.move_west()
-portal_one.move_west()
-portal_one.move_west()
-portal_one.move_west()
+#boulder_one.callback_test(lambda: boulder_one.callback_test(lambda: print("hohohoho")))
 
-boulder_four.move_east()
-boulder_four.move_south()
+boulder_one.focus()
+boulder_one.move_south(lambda: boulder_one.move_south(lambda: boulder_one.move_west(lambda: boulder_one.move_south(lambda: boulder_one.move_south(lambda: boulder_one.move_south())))))
+croc_one.focus()
+croc_one.follow_path("north, east, east, south, west, west", True)
+
+
+#boulder_four.callback_test(lambda: boulder_four.callback_test(lambda: boulder_four.callback_test(lambda: print(dialogue))))
+boulder_four.callback_test(lambda: boulder_four.callback_test(lambda: boulder_four.callback_test(lambda: print(game.getDialogue("welcome")))))
+print("wohooo")

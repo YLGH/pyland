@@ -8,7 +8,11 @@ from api_placeholder import API
 api = API()
 
 """ This is the base game object,
-Any object you wish to have in game MUST by a child of this
+Any object you wish to have in game MUST by a child of this.
+
+This acts as an abstraction of the C++ entity object and wraps around it.
+In cases where it is appropriate, it calls the entity methods directly, but other times
+makes their behaviour a bit nicer as well.
 """
 class GameObject:
 
@@ -27,6 +31,14 @@ class GameObject:
         self.set_sprite("")
         self.set_visible(False)
         self.set_solid(False)
+
+    def test(self, text):
+        self.__entity.print_dialogue(text)
+        return
+
+    def callback_test(self, callback):
+        self.__entity.callback_test(callback)
+        return
 
     def get_name(self):
         return self.__entity.get_name()
@@ -64,6 +76,13 @@ class GameObject:
         api.pause_animating(self) #api will pause the animation
         return
 
+    """ Centre the camera on the position of this object, if the object moves, then
+    the camera follows it as well. This is the case until the focus of the camera
+    gets changed to another object or the level is reloaded/changed, snaps instantly """
+    def focus(self):
+        self.__entity.focus()
+        return
+
     """ Returns the location of the player,
     the first coordinate is their x-axis position
     the second coordinate is their y-axis position
@@ -81,35 +100,35 @@ class GameObject:
         return
     
     """ Smoothly slides this object north by one tile 
-    The callback is called when the operation is complete
+    The callback is put on the event queue when the operation is complete
     """
     def move_north(self, callback = lambda: None):
         #api.move_north(self, callback)
-        self.__entity.move_north()
+        self.__entity.move_north(callback)
         return
 
     """ Smoothly slides this object east by one tile 
-    The callback is called when the operation is complete
+    The callback is put on the event queue when the operation is complete
     """
     def move_east(self, callback = lambda: None):
         #api.move_east(self, callback)
-        self.__entity.move_east()
+        self.__entity.move_east(callback)
         return
 
     """ Smoothly slides this object south by one tile 
-    The callback is called when the operation is complete
+    The callback is put on the event queue when the operation is complete
     """
     def move_south(self, callback = lambda: None):
         #api.move_south(self, callback)
-        self.__entity.move_south()
+        self.__entity.move_south(callback)
         return
 
     """ Smoothly slides this object west by one tile 
-    The callback is called when the operation is complete
+    The callback is put on the event queue when the operation is complete
     """
     def move_west(self, callback = lambda: None):
         #api.move_west(self, callback)
-        self.__entity.move_west()
+        self.__entity.move_west(callback)
         return
 
     """ Returns if this object is moving """
