@@ -22,11 +22,13 @@
 #include "notification_bar.hpp"
 #include "object_manager.hpp"
 #include "challenge_helper.hpp"
+#include "game_engine.hpp"
 
 namespace py = boost::python;
 
 Challenge::Challenge(ChallengeData* _challenge_data) :
-    map(nullptr), sprite_switcher(nullptr), challenge_data(_challenge_data) {
+    game_engine(nullptr), map(nullptr), sprite_switcher(nullptr), challenge_data(_challenge_data) {
+        //Load the correct map into the game.
         map = new Map(challenge_data->map_name);
         MapViewer* map_viewer = Engine::get_map_viewer();
         if(map_viewer == nullptr) {
@@ -55,12 +57,17 @@ Challenge::Challenge(ChallengeData* _challenge_data) :
             //Push the map_object on the Challenge's internal list of map_objects
             map_object_ids.push_back(map_object_id);
             //Create the entity which will be passed to python for each map_object
-            auto *a_thing(new Entity(properties.second.position, properties.first, properties.second.object_file_location, map_object_id));
+            //TODO: See if using handlers to keep track of existing entities instead of raw pointers makes more sense.
+            auto *entity(new Entity(properties.second.position, properties.first, properties.second.object_file_location, map_object_id));
 
-            entity_list.push_front(*a_thing); //put all the entities in the entity list!!!
+            entity_list.push_front(*entity); //put all the entities in the entity list!!!
         }
+
+        //create a new GameEngine instance for the python api, we need to review if this is the best place to create it
+        game_engine = new GameEngine();
+
         //The intepreter creates a new python thread which is the main thread for the running level, the list of all objects in the level are passed to it which are then exposed to the python code
-        daemon = std::make_unique<LockableEntityThread>(challenge_data->interpreter->register_entities(entity_list));
+        daemon = std::make_unique<LockableEntityThread>(challenge_data->interpreter->register_entities(entity_list, *game_engine));
         daemon->value->halt_soft(EntityThread::Signal::RESTART);
 }
 
@@ -88,6 +95,9 @@ Challenge::~Challenge() {
 
     //Delete the map
     delete map;
+
+    //Delete the game engine wrapper
+    delete game_engine;
     //All threads created for the challenge should have terminated now
     LOG(INFO) << " CHALLENGE DESTROYED ";
 }

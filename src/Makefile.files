@@ -12,6 +12,7 @@ TEST_EXECUTABLE_OBJ = test/test.o
 BASE_OBJS = \
 	animation_frames.o     \
 	challenge_helper.o     \
+	config.o               \
 	engine.o               \
 	event_manager.o        \
 	game_time.o            \
@@ -82,7 +83,7 @@ PYTHON_OBJS = \
 	python_embed/locks.o               \
 	python_embed/entitythread.o        \
 	python_embed/thread_killer.o       \
-
+	python_embed/game_engine.o         \
 
 # For precompiling
 PYTHON_HEADER = \
