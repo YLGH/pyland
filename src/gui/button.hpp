@@ -21,12 +21,22 @@
 #include <GL/gl.h>
 #endif
 
+enum class ButtonType{
+    Board = 1,
+    SpriteHead = 2
+};
 
 class Button : public ComponentGroup {
     std::shared_ptr<GUIText> button_text;
+
+    ButtonType type;
+
 public:
-    Button();
-    Button(std::shared_ptr<Text> _text, std::function<void (void)> on_click, float _width, float _height, float _x_offset, float _y_offset);
+
+
+    Button(ButtonType _type, std::shared_ptr<Text> _text, std::function<void (void)> on_click, float _width, float _height, float _x_offset, float _y_offset);
+    Button(ButtonType _type, std::shared_ptr<Text> _text);
+    Button(ButtonType _type, std::string _text);
 
     std::shared_ptr<Text> get_text();
 

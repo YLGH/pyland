@@ -29,8 +29,7 @@ NotificationBar::NotificationBar() {
     TextFont notification_buttonfont = Engine::get_game_font();
 
     /// build back button
-    backward_button = std::make_shared<Button>();
-    backward_button->set_text("<- Previous");
+    backward_button = std::make_shared<Button>(ButtonType::Board, "PREVIOUS");
     backward_button->set_on_click([&] () {
         LOG(INFO) << "backward button pressed";
         move_notification(Direction::PREVIOUS);
@@ -41,8 +40,7 @@ NotificationBar::NotificationBar() {
     backward_button->set_x_offset(backward_loco.first);
 
     //build forwards button
-    forward_button = std::make_shared<Button>();
-    forward_button->set_text("Next ->");
+    forward_button = std::make_shared<Button>(ButtonType::Board, "NEXT");
     forward_button->set_on_click([&] () {
         LOG(INFO) << "forward button pressed";
         move_notification(Direction::NEXT);
