@@ -73,6 +73,9 @@ sudo apt-get install --no-install-recommends libboost1.55-all-dev python3-dev li
 sudo apt-get install libsdl2-dev
 sudo apt-get install libsdl2-image-dev
 sudo apt-get install libsdl2-ttf-dev
+sudo apt-get install libsdl2-mixer-dev
+sudo apt-get install libogg-dev
+sudo apt-get install libvorbis-dev
 sudo apt-get install libgoogle-glog0
 sudo apt-get install libgoogle-glog-dev
 ```
